@@ -1,7 +1,6 @@
 
 using Microsoft.AspNetCore.Mvc;
 using JokeWebApp;
-using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +12,9 @@ builder.Services.AddSwaggerGen(options =>
     var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(System.IO.Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
+builder.Services.AddOptions<AzureOpenAiSettings>()
+    .Bind(builder.Configuration.GetSection(AzureOpenAiSettings.SectionName));
+
 // Register the AiClient as a singleton to reuse the client instance.
 builder.Services.AddSingleton<AiClient>();
 
@@ -33,7 +35,7 @@ app.MapPost("/api/getJoke", async (
 {
     try
     {
-        var response = await aiClient.AskAiModelAsync(request.Input);
+        var response = await aiClient.AskAiModelAsync(request.Input, request.Language);
         return Results.Ok(new JokeResponse { Response = response });
     }
     catch (Exception ex)
@@ -60,6 +62,12 @@ public class ChatRequestInput
     /// </summary>
     /// <example>Розкажи анекдот</example>
     public string Input { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The language for the joke. Supported languages are Ukrainian, English, and Polish. Defaults to Ukrainian if not specified or if the specified language is not supported.
+    /// </summary>
+    /// <example>English</example>
+    public string Language { get; set; } = Constants.DefaultLanguage;
 }
 
 /// <summary>

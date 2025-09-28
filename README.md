@@ -17,27 +17,31 @@ This is a simple ASP.NET 8 Web API that generates jokes using Azure OpenAI Servi
 
 ## Configuration
 
-The application requires credentials for the Azure OpenAI service. These can be configured in two ways:
+The application uses the **Azure OpenAI Service** to generate jokes. It requires you to provide credentials for your own Azure OpenAI resource.
+
+These can be configured in two ways:
 
 ### 1. appsettings.json
 
-Fill in the `AzureOpenAI` section in the `JokeWebApp/appsettings.json` file:
+Fill in the `AzureOpenAI` section in the `JokeWebApp/appsettings.json` file with the endpoint and key from your Azure OpenAI resource:
 
 ```json
 {
   "AzureOpenAI": {
-    "Endpoint": "https://your-azure-endpoint.com",
-    "ApiKey": "YOUR_SECRET_API_KEY"
+    "Endpoint": "YOUR_AZURE_OPENAI_ENDPOINT",
+    "ApiKey": "YOUR_AZURE_OPENAI_API_KEY",
+    "ModelDeploymentName": "jester" // Optional, defaults to "jester"
   }
 }
 ```
 
 ### 2. Environment Variables
 
-You can provide the configuration via environment variables. This is the recommended approach for production and Docker deployments. The double underscore `__` is used as a separator.
+You can provide the configuration via environment variables. This is the recommended approach for production and Docker deployments. The double underscore `__` is used as a separator for nested keys.
 
-- `AzureOpenAI__Endpoint`
-- `AzureOpenAI__ApiKey`
+- `AzureOpenAI__Endpoint`: The endpoint URL for your Azure OpenAI service.
+- `AzureOpenAI__ApiKey`: The API key for your Azure OpenAI service.
+- `AzureOpenAI__ModelDeploymentName`: The name of the model deployment to use (optional).
 
 ## How to Run
 
@@ -77,16 +81,19 @@ Send a POST request to the `/api/getJoke` endpoint.
 
 ```json
 {
-  "input": "Any text here"
+  "input": "Any text here",
+  "language": "English"
 }
 ```
+
+**Note:** The `language` field is optional. Supported languages are `Ukrainian`, `English`, and `Polish`. If the field is omitted or if an unsupported language is specified, the API will default to `Ukrainian`.
 
 **Example with cURL:**
 
 ```bash
 cURL -X POST http://localhost:8080/api/getJoke \
 -H "Content-Type: application/json" \
--d '{"input": "Розкажи жарт"}'
+-d '{"input": "Розкажи жарт", "language": "Ukrainian"}'
 ```
 
 **Success Response (200 OK):**
@@ -95,4 +102,29 @@ cURL -X POST http://localhost:8080/api/getJoke \
 {
   "response": "Чому програмісти плутають Хелловін та Різдво? Тому що 31 OCT = 25 DEC."
 }
+```
+
+## API Schema
+
+This diagram illustrates the flow of a request to the API, including the structure of the request and response models.
+
+```mermaid
+graph TD
+    subgraph "Client Request"
+        A[POST /api/getJoke]
+    end
+
+    subgraph "Request Body"
+        B(ChatRequestInput)
+        B -- contains --> B1["input: string"]
+        B -- contains --> B2["language: string (optional)"]
+    end
+
+    subgraph "Response Body"
+        C(JokeResponse)
+        C -- contains --> C1["response: string"]
+    end
+
+    A --> B
+    B -->|API Logic| C
 ```
